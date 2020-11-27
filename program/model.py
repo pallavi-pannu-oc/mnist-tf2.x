@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+
 """Runs a simple model on the MNIST dataset."""
 from __future__ import absolute_import
 from __future__ import division
@@ -20,12 +21,7 @@ from __future__ import print_function
 import os
 import requests
 import json
-
-if os.getenv('DKUBE_JOB_CLASS',None) == 'notebook':
-    MODEL_DIR = "model"
-    DATA_DIR = "/opt/dkube/input"
-    if not os.path.exists('model'):
-        os.makedirs('model')
+import dataset_preprocessing
 
 # Import libraries
 from absl import app
@@ -38,10 +34,15 @@ from official.utils.flags import core as flags_core
 from official.utils.misc import model_helpers
 from official.vision.image_classification.resnet import common
 
+if os.getenv('DKUBE_JOB_CLASS',None) == 'notebook':
+    MODEL_DIR = "model"
+    DATA_DIR = "/opt/dkube/input"
+    if not os.path.exists('model'):
+        os.makedirs('model')
+
 FLAGS = flags.FLAGS
 MODEL_DIR="/opt/dkube/model"
 DATA_DIR="/opt/dkube/input"
-
 
 
 def build_model():
@@ -96,20 +97,10 @@ def run(flags_obj, datasets_override=None, strategy_override=None):
       tpu_address=flags_obj.tpu)
 
   strategy_scope = distribute_utils.get_strategy_scope(strategy)
+  
 
-  mnist = tfds.builder('mnist', data_dir=DATA_DIR)
-  if flags_obj.download:
-    print("downloading")
-    mnist.download_and_prepare()
-
-  mnist_train, mnist_test = datasets_override or mnist.as_dataset(
-      split=['train', 'test'],
-      decoders={'image': decode_image()},  # pylint: disable=no-value-for-parameter
-      as_supervised=True)
-  train_input_dataset = mnist_train.cache().repeat().shuffle(
-      buffer_size=50000).batch(flags_obj.batch_size)
-  eval_input_dataset = mnist_test.cache().repeat().batch(flags_obj.batch_size)
-
+  train_input_dataset,eval_input_dataset=dataset_preprocessing.get_final_data(flags_obj.batch_size)
+  
   with strategy_scope:
     lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
         0.05, decay_steps=100000, decay_rate=0.96)
@@ -121,7 +112,7 @@ def run(flags_obj, datasets_override=None, strategy_override=None):
         loss='sparse_categorical_crossentropy',
         metrics=['sparse_categorical_accuracy'])
 
-  num_train_examples = mnist.info.splits['train'].num_examples
+  num_train_examples = 60000
   train_steps = num_train_examples // flags_obj.batch_size
   train_epochs = FLAGS.train_epochs
 
@@ -132,7 +123,7 @@ def run(flags_obj, datasets_override=None, strategy_override=None):
       tf.keras.callbacks.TensorBoard(log_dir=flags_obj.model_dir),
   ]
 
-  num_eval_examples = mnist.info.splits['test'].num_examples
+  num_eval_examples = 10000
   num_eval_steps = num_eval_examples // flags_obj.batch_size
 
   history = model.fit(
@@ -173,12 +164,7 @@ def api_calling(loss,accuracy,train_steps):
 
 def define_mnist_flags():
   """Define command line flags for MNIST model."""
-  flags_core.define_base(
-      clean=True,
-      num_gpu=True,
-      train_epochs=True,
-      epochs_between_evals=True,
-      distribution_strategy=True)
+  flags_core.define_base(clean=True,num_gpu=True,train_epochs=True,epochs_between_evals=True,distribution_strategy=True)
   flags_core.define_device()
   flags_core.define_distribution()
   flags.DEFINE_bool('download', False,
@@ -186,7 +172,7 @@ def define_mnist_flags():
   FLAGS.set_default('batch_size', 1024)
   FLAGS.set_default('num_gpus',0)
   FLAGS.set_default('model_dir',MODEL_DIR)
-  FLAGS.set_default('data_dir',DATA_DIR)
+  FLAGS.set_default('data_dir','none')
   FLAGS.set_default('train_epochs',2)
   FLAGS.set_default('distribution_strategy','one_device')
 
@@ -198,6 +184,6 @@ def main(_):
 
 
 if __name__ == '__main__':
-  logging.set_verbosity(logging.INFO)
+  #logging.set_verbosity(logging.INFO)
   define_mnist_flags()
   app.run(main)
