@@ -1,6 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from six.moves import urllib
+import gzip
 
 _MNIST_IMAGE_SIZE = 28
 _MNIST_NUM_CLASSES = 10
@@ -10,7 +11,7 @@ _TEST_EXAMPLES = 10000
 DATA_DIR='/opt/dkube/input'
 
 def _extract_mnist_images(image_filepath, num_images):
-  with tf.io.gfile.GFile(image_filepath, "rb") as f:
+    f = gzip.open(image_filepath,'r')
     f.read(16)  # header
     buf = f.read(_MNIST_IMAGE_SIZE * _MNIST_IMAGE_SIZE * num_images)
     data = np.frombuffer(
@@ -21,7 +22,7 @@ def _extract_mnist_images(image_filepath, num_images):
 
 
 def _extract_mnist_labels(labels_filepath, num_labels):
-  with tf.io.gfile.GFile(labels_filepath, "rb") as f:
+    f = gzip.open(labels_filepath,'r')
     f.read(8)  # header
     buf = f.read(num_labels)
     labels = np.frombuffer(buf, dtype=np.uint8).astype(np.int64)
