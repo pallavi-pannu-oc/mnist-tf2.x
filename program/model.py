@@ -98,7 +98,7 @@ def run(flags_obj, datasets_override=None, strategy_override=None):
 
   strategy_scope = distribute_utils.get_strategy_scope(strategy)
   
-
+  print("getting the data")
   train_input_dataset,eval_input_dataset=dataset_preprocessing.get_final_data(flags_obj.batch_size)
   
   with strategy_scope:
@@ -172,7 +172,7 @@ def define_mnist_flags():
   FLAGS.set_default('batch_size', 1024)
   FLAGS.set_default('num_gpus',0)
   FLAGS.set_default('model_dir',MODEL_DIR)
-  FLAGS.set_default('data_dir','none')
+  FLAGS.set_default('data_dir',DATA_DIR)
   FLAGS.set_default('train_epochs',2)
   FLAGS.set_default('distribution_strategy','one_device')
 
@@ -184,6 +184,6 @@ def main(_):
 
 
 if __name__ == '__main__':
-  #logging.set_verbosity(logging.INFO)
+  logging.set_verbosity(logging.INFO)
   define_mnist_flags()
   app.run(main)
