@@ -1,8 +1,9 @@
 import numpy as np
+import tensorflow as tf
 from six.moves import urllib
 
 _MNIST_IMAGE_SIZE = 28
-MNIST_NUM_CLASSES = 10
+_MNIST_NUM_CLASSES = 10
 _TRAIN_EXAMPLES = 60000
 _TEST_EXAMPLES = 10000
 
