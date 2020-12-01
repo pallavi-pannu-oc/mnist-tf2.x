@@ -89,7 +89,7 @@ def build_model():
 
 def start_mnist(flags_obj):
   """Run MNIST model training and eval loop using native Keras APIs."""
-  print("getting the data")
+  ### Getting the data ##
   train_input_dataset,eval_input_dataset=dataset_preprocessing.get_final_data(flags_obj.batch_size)
   model = build_model()
   model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['sparse_categorical_accuracy'])
