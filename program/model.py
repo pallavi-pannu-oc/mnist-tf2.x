@@ -123,7 +123,7 @@ def log_metrics(loss,accuracy,step,epoch):
     metrics['jobid']=os.getenv('DKUBE_JOB_ID')
     metrics['jobuuid']=os.getenv('DKUBE_JOB_UUID')
     metrics['username']=os.getenv('DKUBE_USER_LOGIN_NAME')
-    requests.post(url, data=json.dumps({'data': [metrics]}))
+    requests.post(url, json = metrics)
 
 def main():
     # Argument parsing
