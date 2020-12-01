@@ -18,21 +18,17 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+## Importing libraries
 import os
 import requests
 import json
 import dataset_preprocessing
-
-# Import libraries
 from absl import app
 from absl import flags
 from absl import logging
 import tensorflow as tf
-import tensorflow_datasets as tfds
-from official.common import distribute_utils
-from official.utils.flags import core as flags_core
-from official.utils.misc import model_helpers
-from official.vision.image_classification.resnet import common
+import argparse
+
 
 if os.getenv('DKUBE_JOB_CLASS',None) == 'notebook':
     MODEL_DIR = "model"
@@ -40,9 +36,11 @@ if os.getenv('DKUBE_JOB_CLASS',None) == 'notebook':
     if not os.path.exists('model'):
         os.makedirs('model')
 
-FLAGS = flags.FLAGS
 MODEL_DIR="/opt/dkube/model"
 DATA_DIR="/opt/dkube/input"
+BATCH_SIZE=1024
+num_train_examples = 60000
+num_eval_examples = 10000
 
 
 def build_model():
@@ -75,55 +73,23 @@ def build_model():
   return model
 
 
-@tfds.decode.make_decoder(output_dtype=tf.float32)
-def decode_image(example, feature):
-  """Convert image to float32 and normalize from [0, 255] to [0.0, 1.0]."""
-  return tf.cast(feature.decode_example(example), dtype=tf.float32) / 255
 
-
-def run(flags_obj, datasets_override=None, strategy_override=None):
-  """Run MNIST model training and eval loop using native Keras APIs.
-  Args:
-    flags_obj: An object containing parsed flag values.
-    datasets_override: A pair of `tf.data.Dataset` objects to train the model,
-                       representing the train and test sets.
-    strategy_override: A `tf.distribute.Strategy` object to use for model.
-  Returns:
-    Dictionary of training and eval stats.
-  """
-  strategy = strategy_override or distribute_utils.get_distribution_strategy(
-      distribution_strategy=flags_obj.distribution_strategy,
-      num_gpus=flags_obj.num_gpus,
-      tpu_address=flags_obj.tpu)
-
-  strategy_scope = distribute_utils.get_strategy_scope(strategy)
-  
+def start_mnist(flags_obj):
+  """Run MNIST model training and eval loop using native Keras APIs."""
   print("getting the data")
   train_input_dataset,eval_input_dataset=dataset_preprocessing.get_final_data(flags_obj.batch_size)
-  
-  with strategy_scope:
-    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        0.05, decay_steps=100000, decay_rate=0.96)
-    optimizer = tf.keras.optimizers.SGD(learning_rate=lr_schedule)
-
-    model = build_model()
-    model.compile(
-        optimizer=optimizer,
-        loss='sparse_categorical_crossentropy',
-        metrics=['sparse_categorical_accuracy'])
-
-  num_train_examples = 60000
+  model = build_model()
+  model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['sparse_categorical_accuracy'])
   train_steps = num_train_examples // flags_obj.batch_size
-  train_epochs = FLAGS.train_epochs
-
-  ckpt_full_path = os.path.join(flags_obj.model_dir, 'model.ckpt-{epoch:04d}')
+  train_epochs = flags_obj.train_epochs
+  ckpt_full_path = os.path.join(MODEL_DIR, 'model.ckpt-{epoch:04d}')
   callbacks = [
       tf.keras.callbacks.ModelCheckpoint(
           ckpt_full_path, save_weights_only=True),
-      tf.keras.callbacks.TensorBoard(log_dir=flags_obj.model_dir),
+      tf.keras.callbacks.TensorBoard(log_dir=MODEL_DIR),
   ]
 
-  num_eval_examples = 10000
+  
   num_eval_steps = num_eval_examples // flags_obj.batch_size
 
   history = model.fit(
@@ -133,57 +99,46 @@ def run(flags_obj, datasets_override=None, strategy_override=None):
       callbacks=callbacks,
       validation_steps=num_eval_steps,
       validation_data=eval_input_dataset,
-      validation_freq=flags_obj.epochs_between_evals)
+      validation_freq=True)
 
   export_path = os.path.join(MODEL_DIR, 'saved_model')
   model.save(export_path, include_optimizer=False)
 
-  eval_output = model.evaluate(
-      eval_input_dataset, steps=num_eval_steps, verbose=2)
+  eval_output = model.evaluate(eval_input_dataset, steps=num_eval_steps, verbose=2)
   
-  loss=eval_output[0]
-  accuracy=eval_output[1]
-  api_calling(loss,accuracy,train_steps)
+  step=1
+  for epoch in range(0,flags_obj.train_epochs):
+        log_metrics(history.history["loss"][epoch],history.history["sparse_categorical_accuracy"][epoch],step,epoch+1)
+         step=step+1
 
-  stats = common.build_stats(history, eval_output, callbacks)
-  return stats
 
-def api_calling(loss,accuracy,train_steps):
+def log_metrics(loss,accuracy,step,epoch):
     url="http://dkube-exporter.dkube:9401/export-training-info"
     metrics={}
     metrics['mode']="eval"
     metrics['loss']=loss
     metrics['accuracy']=accuracy
-    metrics['epoch']=FLAGS.train_epochs
-    metrics['step']=train_steps
+    metrics['epoch']=epoch
+    metrics['step']=step
     metrics['jobid']=os.getenv('DKUBE_JOB_ID')
     metrics['jobuuid']=os.getenv('DKUBE_JOB_UUID')
     metrics['username']=os.getenv('DKUBE_USER_LOGIN_NAME')
-    metrics['max_steps']="1"
     requests.post(url, data=json.dumps({'data': [metrics]}))
 
-def define_mnist_flags():
-  """Define command line flags for MNIST model."""
-  flags_core.define_base(clean=True,num_gpu=True,train_epochs=True,epochs_between_evals=True,distribution_strategy=True)
-  flags_core.define_device()
-  flags_core.define_distribution()
-  flags.DEFINE_bool('download', False,
-                    'Whether to download data to `--data_dir`.')
-  FLAGS.set_default('batch_size', 1024)
-  FLAGS.set_default('num_gpus',0)
-  FLAGS.set_default('model_dir',MODEL_DIR)
-  FLAGS.set_default('data_dir',DATA_DIR)
-  FLAGS.set_default('train_epochs',2)
-  FLAGS.set_default('distribution_strategy','one_device')
-
-
-def main(_):
-  model_helpers.apply_clean(FLAGS)
-  stats = run(flags.FLAGS)
-  logging.info('Run stats:\n%s', stats)
-
+def main():
+    # Argument parsing
+    parser = argparse.ArgumentParser(description='Tensorflow MNIST Example')
+    parser.add_argument('--batch_size', type=int, default=BATCH_SIZE, metavar='N',
+                        help='input batch size for training (default: 1024)')
+    parser.add_argument('--train_epochs', type=int, default=4, metavar='N',
+                        help='number of epochs to train (default: 5)')
+    
+    flags_obj,unparsed=parser.parse_known_args()
+    print(flags_obj.batch_size)
+    print(flags_obj.train_epochs)
+    start_mnist(flags_obj)
 
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
-  define_mnist_flags()
-  app.run(main)
+  main()
+  
