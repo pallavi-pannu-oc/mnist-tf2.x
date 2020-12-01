@@ -31,10 +31,10 @@ import argparse
 
 
 if os.getenv('DKUBE_JOB_CLASS',None) == 'notebook':
-    MODEL_DIR = "model"
-    DATA_DIR = "/opt/dkube/input"
-    if not os.path.exists('model'):
-        os.makedirs('model')
+  MODEL_DIR = "model"
+  DATA_DIR = "/opt/dkube/input"
+  if not os.path.exists('model'):
+    os.makedirs('model')
 
 MODEL_DIR="/opt/dkube/model"
 DATA_DIR="/opt/dkube/input"
@@ -108,14 +108,14 @@ def start_mnist(flags_obj):
   
   step=1
   for epoch in range(0,flags_obj.train_epochs):
-        log_metrics(history.history["loss"][epoch],history.history["sparse_categorical_accuracy"][epoch],step,epoch+1)
-         step=step+1
+    log_metrics(history.history["loss"][epoch],history.history["sparse_categorical_accuracy"][epoch],step,epoch+1)
+    step=step+1
 
 
 def log_metrics(loss,accuracy,step,epoch):
-    url="http://dkube-exporter.dkube:9401/export-training-info"
+    url="http://dkube-exporter.dkube:9401/mlflow-exporter"
     metrics={}
-    metrics['mode']="eval"
+    metrics['mode']="train"
     metrics['loss']=loss
     metrics['accuracy']=accuracy
     metrics['epoch']=epoch
@@ -141,4 +141,3 @@ def main():
 if __name__ == '__main__':
   logging.set_verbosity(logging.INFO)
   main()
-  
