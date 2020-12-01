@@ -42,6 +42,19 @@ BATCH_SIZE=1024
 num_train_examples = 60000
 num_eval_examples = 10000
 
+def logging_metrics(key, value, step, epoch):
+    url = "http://dkube-exporter.dkube:9401/mlflow-exporter"
+    train_metrics = {}
+    train_metrics['mode']="train"
+    train_metrics['key'] = key
+    train_metrics['value'] = value
+    train_metrics['step'] = step
+    train_metrics['epoch'] = epoch
+    train_metrics['jobid']=os.getenv('DKUBE_JOB_ID')
+    train_metrics['run_id']=os.getenv('DKUBE_JOB_UUID')
+    train_metrics['username']=os.getenv('DKUBE_USER_LOGIN_NAME')
+    requests.post(url, json = train_metrics)
+
 
 def build_model():
   """Constructs the ML model used to predict handwritten digits."""
@@ -108,22 +121,12 @@ def start_mnist(flags_obj):
   
   step=1
   for epoch in range(0,flags_obj.train_epochs):
-    log_metrics(history.history["loss"][epoch].item(),history.history["sparse_categorical_accuracy"][epoch].item(),step,epoch+1)
+    logging_metrics('loss',history.history["loss"][epoch].item(),step,epoch+1)
+    logging_metrics('accuracy',history.history["sparse_categorical_accuracy"][epoch].item(),step,epoch+1)
     step=step+1
 
 
-def log_metrics(loss,accuracy,step,epoch):
-    url="http://dkube-exporter.dkube:9401/mlflow-exporter"
-    metrics={}
-    metrics['mode']="train"
-    metrics['loss']=loss
-    metrics['accuracy']=accuracy
-    metrics['epoch']=epoch
-    metrics['step']=step
-    metrics['jobid']=os.getenv('DKUBE_JOB_ID')
-    metrics['jobuuid']=os.getenv('DKUBE_JOB_UUID')
-    metrics['username']=os.getenv('DKUBE_USER_LOGIN_NAME')
-    requests.post(url, json = metrics)
+
 
 def main():
     # Argument parsing
