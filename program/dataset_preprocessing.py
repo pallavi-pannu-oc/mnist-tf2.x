@@ -37,5 +37,5 @@ def get_final_data(batch_size):
   train_data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
   train_data = train_data.cache().repeat().shuffle(5000).batch(batch_size)
   test_data = tf.data.Dataset.from_tensor_slices((x_test,y_test))
-  test_data = test_data.repeat().cache().repeat().batch(batch_size)
+  test_data = test_data.repeat().batch(batch_size)
   return train_data,test_data
