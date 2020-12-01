@@ -108,7 +108,7 @@ def start_mnist(flags_obj):
   
   step=1
   for epoch in range(0,flags_obj.train_epochs):
-    log_metrics(history.history["loss"][epoch],history.history["sparse_categorical_accuracy"][epoch],step,epoch+1)
+    log_metrics(history.history["loss"][epoch].item(),history.history["sparse_categorical_accuracy"][epoch].item(),step,epoch+1)
     step=step+1
 
 
