@@ -137,8 +137,6 @@ def main():
                         help='number of epochs to train (default: 5)')
     
     flags_obj,unparsed=parser.parse_known_args()
-    print(flags_obj.batch_size)
-    print(flags_obj.train_epochs)
     start_mnist(flags_obj)
 
 if __name__ == '__main__':
