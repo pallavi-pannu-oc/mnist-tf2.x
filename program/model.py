@@ -114,7 +114,7 @@ def start_mnist(flags_obj):
       validation_data=eval_input_dataset,
       validation_freq=True)
 
-  export_path = os.path.join(MODEL_DIR, 'saved_model')
+  export_path = MODEL_DIR
   model.save(export_path, include_optimizer=False)
 
   eval_output = model.evaluate(eval_input_dataset, steps=num_eval_steps, verbose=2)
@@ -122,7 +122,7 @@ def start_mnist(flags_obj):
   step=1
   for epoch in range(0,flags_obj.train_epochs):
     logging_metrics('loss',history.history["loss"][epoch].item(),step,epoch+1)
-    logging_metrics('accuracy',history.history["sparse_categorical_accuracy"][epoch].item(),step,epoch+1)
+    logging_metrics('accuracy',history.history["sparse_categorical_accuracy"][epoch].item()*100,step,epoch+1)
     step=step+1
 
 
