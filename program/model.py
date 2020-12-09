@@ -123,7 +123,7 @@ def start_mnist(flags_obj):
   step=1
   for epoch in range(0,flags_obj.num_epochs):
     logging_metrics('loss',history.history["loss"][epoch].item(),step,epoch+1)
-    logging_metrics('accuracy',history.history["sparse_categorical_accuracy"][epoch].item()*100,step,epoch+1)
+    logging_metrics('accuracy',history.history["sparse_categorical_accuracy"][epoch].item(),step,epoch+1)
     step=step+1
 
 
@@ -132,7 +132,7 @@ def main():
       fp = open(os.getenv('DKUBE_JOB_HP_TUNING_INFO_FILE', 'None'),'r')
       hyperparams = json.loads(fp.read())
       hyperparams['num_epochs'] = EPOCHS
-  except:
+    except:
       hyperparams = {"batch_size": BATCH_SIZE, "num_epochs": EPOCHS }
       pass
     parser = argparse.ArgumentParser(description='Tensorflow MNIST Example')
