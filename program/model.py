@@ -60,7 +60,7 @@ def logging_metrics(key, value, step, epoch):
 def build_model():
   """Constructs the ML model used to predict handwritten digits."""
 
-  image = tf.keras.layers.Input(shape=(28, 28, 1))
+  image = tf.keras.layers.Input(shape=(28, 28, 1),name='input')
 
   y = tf.keras.layers.Conv2D(filters=32,
                              kernel_size=5,
@@ -80,9 +80,9 @@ def build_model():
   y = tf.keras.layers.Dense(1024, activation='relu')(y)
   y = tf.keras.layers.Dropout(0.4)(y)
 
-  probs = tf.keras.layers.Dense(10, activation='softmax')(y)
+  probs = tf.keras.layers.Dense(10, activation='softmax',name='output')(y)
 
-  model = tf.keras.models.Model(image, probs, name='mnist')
+  model = tf.keras.models.Model(inputs=image, outputs=probs)
 
   return model
 
