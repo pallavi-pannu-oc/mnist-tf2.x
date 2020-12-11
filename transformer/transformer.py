@@ -52,7 +52,7 @@ class ImageTransformer(kfserving.KFModel):
         img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
         x = img
         x = cv2.resize(x, (img_w, img_h))
-        x = np.array(x, dtype=np.float64)
+        x = np.array(x, dtype=np.float32)
         x = x.reshape(1,img_h,img_w,1)
         payload = {"inputs": {'input': x.tolist()}, 'token':inputs['token']}
         return payload
