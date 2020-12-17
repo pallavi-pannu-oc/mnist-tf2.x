@@ -62,10 +62,10 @@ def train_step(net, example, optimizer):
 class MyModel(Model):
   def __init__(self):
     super(MyModel, self).__init__()
-    self.conv1 = Conv2D(32, 3, activation='relu')
+    self.conv1 = Conv2D(32, 3, activation='relu',name='input')
     self.flatten = Flatten()
     self.d1 = Dense(128, activation='relu')
-    self.d2 = Dense(10)
+    self.d2 = Dense(10, name='output')
 
   def call(self, x):
     x = self.conv1(x)
