@@ -85,7 +85,7 @@ iterator = iter(dataset)
 ckpt = tf.train.Checkpoint(
     step=tf.Variable(1), optimizer=opt, net=model, iterator=iterator
 )
-manager = tf.train.CheckpointManager(ckpt, os.path.join(out_path, 'run-1'), max_to_keep=3)
+manager = tf.train.CheckpointManager(ckpt, os.path.join(MODEL_DIR, 'run-1'), max_to_keep=3)
 ckpt.restore(manager.latest_checkpoint)
 
 steps = steps_per_epoch * epochs
