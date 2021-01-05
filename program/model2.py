@@ -9,9 +9,8 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense, Flatten, Conv2D
 from tensorflow.keras import Model
 
-inp_path = '/opt/dkube/input/'
-out_path = '/opt/dkube/output/'
-filename = 'featureset.parquet'
+DATA_DIR = '/opt/dkube/input/'
+MODEL_DIR = '/opt/dkube/output/'
 batch_size = 32
 
 steps_per_epoch = int(60000/32)
@@ -100,5 +99,5 @@ for _ in range(steps):
         print("Saved checkpoint for step {}: {}".format(int(ckpt.step), save_path))
         print("loss {:1.2f}".format(loss.numpy()))
         
-export_path = os.path.join(out_path,'1')
+export_path = os.path.join(MODEL_DIR,'1')
 model.save(export_path, include_optimizer=False)
