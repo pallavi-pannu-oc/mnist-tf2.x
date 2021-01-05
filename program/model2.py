@@ -17,32 +17,27 @@ batch_size = 32
 steps_per_epoch = int(60000/32)
 epochs = 5
 
-def read_idx(dataset = "training", path = "../data"):
-    # Fucntion to convert ubyte files to numpy arrays
-    if dataset == "training":
-        fname_img = os.path.join(path, 'train-images-idx3-ubyte')
-        fname_lbl = os.path.join(path, 'train-labels-idx1-ubyte')
-    elif dataset == "testing":
-        fname_img = os.path.join(path, 't10k-images-idx3-ubyte')
-        fname_lbl = os.path.join(path, 't10k-labels-idx1-ubyte')
 
-    # Load everything in some numpy arrays
-    with open(fname_lbl, 'rb') as flbl:
-        magic, num = struct.unpack(">II", flbl.read(8))
-        lbl = np.fromfile(flbl, dtype=np.int8)
+mnist = np.load(DATA_DIR+'/mnist.npz')
 
-    with open(fname_img, 'rb') as fimg:
-        magic, num, rows, cols = struct.unpack(">IIII", fimg.read(16))
-        img = np.fromfile(fimg, dtype=np.uint8).reshape(len(lbl), rows, cols)
-    return img, lbl
+def get_dataset(flag):
+    x_train=mnist['x_train']
+    x_test=mnist['x_test']
+    y_train=mnist['y_train']
+    y_test=mnist['y_test']
+    x_train, x_test = x_train / 255.0, x_test / 255.0
+    x_train = x_train[..., tf.newaxis].astype("float32")
+    x_test = x_test[..., tf.newaxis].astype("float32")
+    if flag=='training':
+        return x_train,y_train
+    if flag=='testing':
+        return x_test,y_test
 
 def train_dataset():
-    x_train, y_train = read_idx(path = inp_path)
-    x_train = x_train[..., tf.newaxis].astype("float32")
+    x_train,y_train=get_dataset('training')
     return (
         tf.data.Dataset.from_tensor_slices(dict(x=x_train, y=y_train)).repeat().batch(batch_size)
     )
-
 
 @tf.function
 def train_step(net, example, optimizer):
