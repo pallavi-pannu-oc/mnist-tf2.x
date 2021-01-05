@@ -75,4 +75,4 @@ for _ in range(steps):
     example = next(iterator)
     train_step(model, example, optimizer) 
 export_path = os.path.join(MODEL_DIR,'1')
-model.save(export_path, include_optimizer=False)
+model.save(export_path, include_optimizer=True)
