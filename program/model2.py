@@ -9,8 +9,8 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense, Flatten, Conv2D
 from tensorflow.keras import Model
 
-DATA_DIR = '/opt/dkube/input/'
-MODEL_DIR = '/opt/dkube/output/'
+DATA_DIR = '/opt/dkube/input'
+MODEL_DIR = '/opt/dkube/output'
 batch_size = 32
 
 steps_per_epoch = int(60000/32)
