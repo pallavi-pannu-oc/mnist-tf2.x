@@ -62,17 +62,17 @@ test_loss = tf.keras.metrics.Mean(name='test_loss')
 test_accuracy = tf.keras.metrics.SparseCategoricalAccuracy(name='test_accuracy')
 ### Use tf.GradientTape to train the model ###
 @tf.function
-def train_step(net, example, optimizer):
-    """Trains `net` on `example` using `optimizer`."""
-    images, labels = example['x'], example['y']
-    with tf.GradientTape() as tape:
-        predictions = net(images, training=True)
-        loss = loss_object(labels, output)
-    variables = net.trainable_variables
-    gradients = tape.gradient(loss, variables)
-    optimizer.apply_gradients(zip(gradients, variables))
-    train_loss(loss)
-    train_accuracy(labels, predictions)
+def train_step(images, labels):
+  with tf.GradientTape() as tape:
+    # training=True is only needed if there are layers with different
+    # behavior during training versus inference (e.g. Dropout).
+    predictions = model(images, training=True)
+    loss = loss_object(labels, predictions)
+  gradients = tape.gradient(loss, model.trainable_variables)
+  optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+
+  train_loss(loss)
+  train_accuracy(labels, predictions)
     
 ### Test the model ###
 @tf.function
