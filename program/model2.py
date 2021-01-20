@@ -103,12 +103,10 @@ for epoch in range(epochs):
   for test_images, test_labels in test_ds:
     test_step(test_images, test_labels)
   
-  print(type(train_accuracy.result()))
-  print(type(train_accuracy.result().numpy()))
-  #mlflow.log_metric("train_accuracy",str(train_accuracy.result() * 100))
-  #mlflow.log_metric("train_loss",str(train_loss.result()))
-  #mlflow.log_metric("test_accuracy",str(test_accuracy.result() * 100))
-  #mlflow.log_metric("test_loss",str(test_loss.result()))
+  mlflow.log_metric("train_accuracy",train_accuracy.result().numpy())
+  mlflow.log_metric("train_loss",train_loss.result().numpy())
+  mlflow.log_metric("test_accuracy",test_accuracy.result().numpy())
+  mlflow.log_metric("test_loss",test_loss.result().numpy())
 
 export_path = os.path.join(MODEL_DIR,'1')
 model.save(export_path, include_optimizer=True)
