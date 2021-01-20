@@ -104,6 +104,7 @@ for epoch in range(epochs):
     test_step(test_images, test_labels)
   
   print(type(train_accuracy.result()))
+  print(type(train_accuracy.result().numpy()))
   #mlflow.log_metric("train_accuracy",str(train_accuracy.result() * 100))
   #mlflow.log_metric("train_loss",str(train_loss.result()))
   #mlflow.log_metric("test_accuracy",str(test_accuracy.result() * 100))
